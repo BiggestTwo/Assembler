@@ -1,0 +1,3 @@
+*.vim
+*.pyc
+.DS_Store

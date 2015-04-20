@@ -14,9 +14,10 @@ class TestUtilFunctions(unittest.TestCase):
         basicFile = os.path.join(testFolder, 'basic.txt')
         reservedWords = os.path.join(currDir, '../lib/resource/reservedWord')
 
-        for i in util.ParseFile( basicFile, reservedWords):
+        lines = util.ParseFile( basicFile, reservedWords)
+        for i in lines:
             print i
-        pass
+        print len(lines)
 
     def tearDown(self):
         pass

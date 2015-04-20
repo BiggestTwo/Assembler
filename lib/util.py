@@ -93,3 +93,23 @@ def ParseFile( FilePath, OPPath ):
             assembleInstructions.append( lineProcess(line, reservedWordTable) )
 
     return assembleInstructions
+
+# conversion functions between hex and dec
+def decToHex(string_num):
+    base = [str(x) for x in range(10)] + [ chr(x) for x in range(ord('A'),ord('A')+6)]
+    num = int(string_num)
+    if num == 0 :
+        return 0
+    result = ''
+    mid = []
+    while True:
+        if num == 0 :
+            break
+        num,rem = divmod(num, 16)
+        mid.append(base[rem])
+    for i in range(len(mid)) :
+        result = result + mid[len(mid) - i - 1]
+    return result
+def hexToDec(string_num):
+    return str(int(string_num.upper(), 16))
+

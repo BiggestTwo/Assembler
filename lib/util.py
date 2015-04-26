@@ -1,6 +1,17 @@
 import re
 
-def lineProcess(line, reservedWordTable):
+def formatHexString( hexString ):
+    """
+        formatHexString( hexString ):->String
+        given a HexString, returns a string with prefix '0x'
+    """
+    if not (hexString[0] == '0' and hexString == 'x'):
+        hexString = '0x' + hexString
+
+    return hexString
+
+
+def lineProcess(line, reservedWordTable, opcodeTable):
     # for each line, check if it is a comment or
     if line.find('.') != -1:
     # get rid of the comment part
@@ -9,7 +20,8 @@ def lineProcess(line, reservedWordTable):
 
     #get rid of leading/trailing spaces
     instruction = \
-            {'label': None, 'operation': None, 'operand':None, 'length':3}
+            {'label': None, 'operation': None, 'operand':None, 'length':3,\
+             'format':3}
     state = 0
     wordPattern = r'\S+'
     while True:
@@ -34,6 +46,17 @@ def lineProcess(line, reservedWordTable):
             if firstWord in reservedWordTable:
                state = 1 
                instruction['operation'] = firstWord
+
+               # get information of this instruction
+               if firstWord in opcodeTable.keys():
+                   instruction['format'] = min(opcodeTable[firstWord]['format'])
+                   instruction['length'] = instruction['format']
+               elif firstWord == 'RESW':
+                   instruction['length'] = 3
+               elif firstWord == 'RESB':
+                   instruction['length'] = 1
+
+               # check if extended later
                if extendedFlag == 1:
                    instruction['length'] = 4
             else:
@@ -58,6 +81,24 @@ def lineProcess(line, reservedWordTable):
             # final state, resturn result
             return instruction
 
+def getOpcodeTable( filePath ):
+    """
+    getOpcodeTable( filePath )->list
+    """
+    opcodeLines = []
+    opcodeDict = {}
+    with open( filePath, "r" ) as f:
+        opcodeLines = f.readlines()
+    for opcode in opcodeLines:
+        opcode = opcode.strip()
+        name, opcode, instructionFormat = opcode.split()
+        # convert opcode to a format '0x*'
+        opcode = hex( int(opcode, 16) )
+        instructionFormat = instructionFormat.split('/')
+        instructionFormat = [ int(f) for f in instructionFormat ]
+        opcodeDict[name] = { 'opcode' : opcode, 'format' : instructionFormat }
+
+    return opcodeDict
 
 def getReservedWordTable( filePath ):
     lines = []
@@ -78,8 +119,11 @@ def getReservedWordTable( filePath ):
 #   Parse a origin amssble file
 #   @FilePath - the path of file
 #   return - A parse array of assemble instructions
-def ParseFile( FilePath, OPPath ):
-    reservedWordTable = getReservedWordTable(OPPath)
+def ParseFile( FilePath,
+               reserveTablePath,
+               opcodeTablePath ):
+    reservedWordTable = getReservedWordTable( reserveTablePath )
+    opcodeTable = getOpcodeTable( opcodeTablePath )
 
     lines = []
 
@@ -90,7 +134,8 @@ def ParseFile( FilePath, OPPath ):
     for line in lines:
         line = line.strip()
         if line != "":
-            assembleInstructions.append( lineProcess(line, reservedWordTable) )
+            assembleInstructions.append(
+                            lineProcess(line, reservedWordTable, opcodeTable) )
 
     return assembleInstructions
 
@@ -99,7 +144,7 @@ def decToHex(string_num):
     base = [str(x) for x in range(10)] + [ chr(x) for x in range(ord('A'),ord('A')+6)]
     num = int(string_num)
     if num == 0 :
-        return 0
+        return '0'
     result = ''
     mid = []
     while True:

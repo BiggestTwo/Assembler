@@ -36,7 +36,7 @@ def run(fileName) :
     # begin (read assembly code line by line)
     revisedAssemblyCode = []
     firstLine = 0
-    for i in util.ParseFile( fileDir, reservedWords):
+    for i in util.ParseFile( fileDir, reservedWords ):
         # print i
         opcode = i['operation']
         # read first line to see if START exists
@@ -65,7 +65,7 @@ def run(fileName) :
                     # set error flag
                     ERROR = 1
                 else :
-                    SYMTAB[label] = LOCCTR
+                    SYMTAB[label] = util.decToHex(LOCCTR)
             # search OPTAB for opcode
             if OPTAB.has_key(opcode) :
                 LOCCTR += i['length']
@@ -87,11 +87,21 @@ def run(fileName) :
             break
     # end pass 1
 
+    # add register number to SYMTAB
+    SYMTAB['A'] = '0'
+    SYMTAB['X'] = '1'
+    SYMTAB['L'] = '2'
+    SYMTAB['B'] = '3'
+    SYMTAB['S'] = '4'
+    SYMTAB['T'] = '5'
+
     # return a dictionary containing intermediate code(with memory location) and SYMTAB
     result = {}
     result['intermediate'] = revisedAssemblyCode
     result['SYMTAB'] = SYMTAB
     return result
+
+'''
 
 # sample run
 fileName = 'basic.txt'
@@ -107,3 +117,5 @@ print
 print 'SYMTAB: '
 print symtab
 # end sample run
+
+'''

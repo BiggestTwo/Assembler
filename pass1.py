@@ -32,11 +32,12 @@ def run(fileName) :
     testFolder = os.path.join(currDir, './test/testFiles')
     fileDir = os.path.join(testFolder, fileName)
     reservedWords = os.path.join(currDir, './lib/resource/reservedWord')
+    opcodeTablePath = os.path.join( currDir, './lib/resource/opcode')
 
     # begin (read assembly code line by line)
     revisedAssemblyCode = []
     firstLine = 0
-    for i in util.ParseFile( fileDir, reservedWords ):
+    for i in util.ParseFile( fileDir, reservedWords, opcodeTablePath ):
         # print i
         opcode = i['operation']
         # read first line to see if START exists
@@ -101,7 +102,6 @@ def run(fileName) :
     result['SYMTAB'] = SYMTAB
     return result
 
-'''
 
 # sample run
 fileName = 'basic.txt'
@@ -117,5 +117,3 @@ print
 print 'SYMTAB: '
 print symtab
 # end sample run
-
-'''

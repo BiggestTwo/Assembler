@@ -1,11 +1,64 @@
 import re
 
+def towsCompliment(num, length):
+    '''
+    towsCompliment(num, length)->str
+    '''
+    if num > 0:
+        pass
+    else:
+        num = -num
+        num = bin(num)[2:]
+        while len(num) < length:
+            num = '0' + num
+
+        num = list(num)
+        # reverse
+        for index, value in enumerate(num):
+            if value == '0':
+                num[index] = '1'
+            else:
+                num[index] = '0'
+
+        # add 1
+        flag = 1
+        index = length - 1
+        while index > 0:
+            b = int(num[index])
+            b = b + flag
+            if b >= 2:
+                flag = 1
+                b = 0
+            else:
+                flag = 0
+            num[index] = str(b)
+            index = index - 1
+
+    result = ''
+    for x in num:
+        result = result + x
+    return result
+
+def fourBitBin(x):
+    """
+        fourBitBin(x)->String
+        given a decimal number(0-16), returns a four-bit binnary number.
+        fourBitBin(1) -> "0b0001"
+    """
+    result = bin(x)
+    result = result[2:]
+    while len(result) % 4 != 0:
+        result = '0' + result
+
+    result = '0b' + result
+    return result
+
 def formatHexString( hexString ):
     """
         formatHexString( hexString ):->String
         given a HexString, returns a string with prefix '0x'
     """
-    if not (hexString[0] == '0' and hexString == 'x'):
+    if len(hexString) < 2 or not (hexString[0] == '0' and hexString[1] == 'x'):
         hexString = '0x' + hexString
 
     return hexString
@@ -51,10 +104,6 @@ def lineProcess(line, reservedWordTable, opcodeTable):
                if firstWord in opcodeTable.keys():
                    instruction['format'] = min(opcodeTable[firstWord]['format'])
                    instruction['length'] = instruction['format']
-               elif firstWord == 'RESW':
-                   instruction['length'] = 3
-               elif firstWord == 'RESB':
-                   instruction['length'] = 1
 
                # check if extended later
                if extendedFlag == 1:
@@ -77,6 +126,11 @@ def lineProcess(line, reservedWordTable, opcodeTable):
                                     map(removeSpaces, instruction['operand'])
             state = 2
 
+            if instruction['operation'] == 'RESW':
+               instruction['length'] = 3 * int(instruction['operand'][0])
+            if instruction['operation'] == 'RESB':
+               instruction['length'] = 1 * int(instruction['operand'][0])
+
         if state == 2:
             # final state, resturn result
             return instruction
@@ -91,12 +145,23 @@ def getOpcodeTable( filePath ):
         opcodeLines = f.readlines()
     for opcode in opcodeLines:
         opcode = opcode.strip()
-        name, opcode, instructionFormat = opcode.split()
+        splitResult = opcode.split()
+        name = splitResult[0]
+        opcode = splitResult[1]
+        instructionFormat = splitResult[2]
+        if len(splitResult) > 3:
+            note = splitResult[3]
+        else:
+            note = None
         # convert opcode to a format '0x*'
         opcode = hex( int(opcode, 16) )
+        while len(opcode[2:]) < 2:
+            opcode = '0x' + '0' + opcode[2:]
         instructionFormat = instructionFormat.split('/')
         instructionFormat = [ int(f) for f in instructionFormat ]
-        opcodeDict[name] = { 'opcode' : opcode, 'format' : instructionFormat }
+        opcodeDict[name] = { 'opcode' : opcode,
+                             'format' : instructionFormat,
+                             'note' : note}
 
     return opcodeDict
 

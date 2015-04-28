@@ -45,7 +45,7 @@ def run(fileName) :
             firstLine = 1
             if opcode == 'START' :
                 # starting address
-                STARTING_ADDRESS = int(i['operand'][0])
+                STARTING_ADDRESS = int(i['operand'][0], 16)
                 LOCCTR = STARTING_ADDRESS
                 # write line to intermediate file
                 i['location'] = None
@@ -101,7 +101,6 @@ def run(fileName) :
     result['intermediate'] = revisedAssemblyCode
     result['SYMTAB'] = SYMTAB
     return result
-
 
 # sample run
 fileName = 'basic.txt'

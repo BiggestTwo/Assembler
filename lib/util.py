@@ -63,6 +63,16 @@ def formatHexString( hexString ):
 
     return hexString
 
+def formatBinString(binString):
+    """
+    formatBinString(binString)->String
+    given a binary string, returns another one with leading '0b'
+    """
+    if len(binString) < 2 or not(binString[0] == '0' and binString[1] == 'b' ):
+        binString = '0b' + binString
+
+    return binString
+
 
 def lineProcess(line, reservedWordTable, opcodeTable):
     # for each line, check if it is a comment or
@@ -73,7 +83,7 @@ def lineProcess(line, reservedWordTable, opcodeTable):
 
     #get rid of leading/trailing spaces
     instruction = \
-            {'label': None, 'operation': None, 'operand':None, 'length':3,\
+            {'label': None, 'operation': None, 'operand':None, 'length':0,\
              'format':3}
     state = 0
     wordPattern = r'\S+'

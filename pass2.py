@@ -160,12 +160,12 @@ def checkLabel( operand, reservedWords):
 			return op
 	return None
 
-def constructHeaderRecord(ProgramName, StartingAddress, Length):
+def constructHeaderRecord(programName, startingAddress, Length):
 	"""
 	constructHeaderRecord(ProgramName, StartingAddress, Length)->String
 	ProgramName : String
-	StartingAddress : String (binary string)
-	Length : 
+	StartingAddress : String (Hex string)
+	Length : int
 	Construt a Header record
 	Col. 1 		H
 	Col. 2-7	Program Name
@@ -173,42 +173,126 @@ def constructHeaderRecord(ProgramName, StartingAddress, Length):
 	Col. 14-19	Length of object program in the bytes(Hex)
 	"""
 	HeaderRecord = 'H'
+	if programName is None:
+		programName = ''
 	while len(programName) < 6:
 		programName = programName + ' '
 
-#
-#	Parameters
-#	@intermediateFile : list of dicts
-#	@SYMTAB : Dict, { symbol: address }
-#	@OPTAB : Dict, {Operation: OPCODE}
-#	@objectProgramPath : String
-#
-def run(intermediateFile,
-		 SYMTAB,
-		 objectProgramPath,
-		 reservedWords,
-		 opcodeTable):
-	'''
-	run(intermediateFile,
-		 SYMTAB,
-		 objectProgramPath,
-		 reservedWords,
-		 opcodeTable)->None
-	'''
-	records = []
-	programName = None
-	startingAddress = hex(0)
-	if intermediateFile[0]['operation'] == 'START':
-		programName = intermediateFile[0]['label']
-		startingAddress = util.formatHexString(
-											intermediateFile[0]['operand'][0])
+	startingAddress = util.formatHexString(startingAddress)[2:]
+	while len(startingAddress) < 6:
+		startingAddress = '0' + startingAddress
 
-	# write Header record to object program
-	# initialize first Text record
-	# Text record: T starting_address( bits) Length(8 bits) opcode
-	
+	Length = hex(Length)[2:]
+	while len(Length) < 6:
+		Length = '0' + Length
+
+	HeaderRecord = 'H' + programName + startingAddress + Length
+	return HeaderRecord
+
+def constructEndRecord(intermediateFile):
+	"""
+	constructEndRecord(intermediate)->String
+	Col. 1		E
+	Col. 2-7	Address of first executable instruction in object program
+				(hexadecimal)
+	"""
+	address = None
+	for item in intermediateFile:
+		if 'objectCode' in item and item['objectCode'] is not None:
+			address = util.formatHexString(item['location'])[2:]
+			while len(address) < 6:
+				address = '0' + address
+			break
+
+	endRecord = 'E' + address
+	return endRecord
+
+
+def assembleTextRecord(textRecordStartingAddress, textRecordObjectCode):
+	"""
+	assembleTextRecord(textRecordStartingAddress, textRecordObjectCode)->String
+	return a signle text Record
+	"""
+	if textRecordStartingAddress is None or textRecordObjectCode is None:
+		return None
+
+	textRecord = 'T'
+	while len(textRecordStartingAddress) < 6:
+		textRecordStartingAddress = '0' + textRecordStartingAddress
+	textRecord = textRecord + textRecordStartingAddress
+	recordLength = int(len( textRecordObjectCode ) / 2)
+	recordLength = hex(recordLength)[2:]
+	if len(recordLength) < 2:
+		recordLength = '0' + recordLength
+	textRecord = textRecord + recordLength
+	textRecord = textRecord + textRecordObjectCode
+	return textRecord
+
+
+def constructTextRecord( intermediateFile ):
+	"""
+	constructTextRecord( intermediateFile )->list
+	Col. 1 		T
+	Col. 2-7	Starting address for object code in the record(Hex)
+	Col. 8-9	Length of object code in this record in bytes(hexadecimal)
+	Col. 10-69	Object code, represented in hexadecimal(2 columns per byte)
+	"""
+	textRecordObjectCodeLength = 60
+	textRecords = []
+	textRecordStartingAddress = None
+	textRecordObjectCode = None
+
+	for item in intermediateFile:
+		# for RESW or RESB
+		if item['operation'] == 'RESW' or item['operation'] == 'RESB':
+			# create a new Text record to none
+			textRecord = \
+			 assembleTextRecord(textRecordStartingAddress, textRecordObjectCode)
+
+			if textRecord is not None:
+				textRecords.append( textRecord )
+
+			textRecordStartingAddress = None
+			textRecordObjectCode = None
+			continue
+
+		# for other instructions
+		if not('objectCode' in item.keys() and item['objectCode'] is not None):
+			continue
+		# put object code into textRecord
+		elif textRecordStartingAddress is None:
+			# create a new Text record
+			textRecordStartingAddress = item['location']
+			textRecordObjectCode = item['objectCode'][2:]
+		elif (len(textRecordObjectCode) + item['length'] * 2) > \
+													textRecordObjectCodeLength:
+			# object code will not fit into the current text record
+			# assemble This text record
+			textRecord = \
+			 assembleTextRecord(textRecordStartingAddress, textRecordObjectCode)
+
+			textRecords.append( textRecord )
+			textRecordStartingAddress = item['location']
+			textRecordObjectCode = item['objectCode'][2:]
+		else:
+			textRecordObjectCode = textRecordObjectCode + item['objectCode'][2:]
+
+	textRecord = \
+	 assembleTextRecord(textRecordStartingAddress, textRecordObjectCode)
+
+	if textRecord is not None:
+		textRecords.append( textRecord )
+	return textRecords
+			
+
+def getObjectCode(intermediateFile,
+				 SYMTAB,
+				 reservedWords,
+				 opcodeTable):
 	for index, intermediateCode in enumerate(intermediateFile):
 		operation = intermediateCode['operation']
+		if operation == 'START':
+			continue
 
 		if operation in opcodeTable.keys():
 			opcode = opcodeTable[operation]['opcode']
@@ -236,9 +320,77 @@ def run(intermediateFile,
 											PC,
 											reservedWords,
 											XOnly )
-			print objectCode
-		elif opcode is None and (operation == 'BYTE' or operation == 'WORD'):
+		elif opcode is None and operation == 'BYTE':
 			# covert constant to object code
-			pass
+			op = operand[0]
+			objectCode = None
+			try:
+				op = int(op)
+				objectCode = hex(op)[2:]
+			except:
+				# character , e.g. X'05'
+				objectCode = op[2:4]
 
+		elif opcode is None and operation == 'WORD':
+			op = operand[0]
+			objectCode = None
+			try:
+				op = int(op)
+				objectCode = hex(op)[2:]
+			except:
+				# characters, e.g. X'05'
+				objectCode = op[2:len(op)-1]
 
+		intermediateFile[index]['objectCode'] = objectCode
+
+	return intermediateFile
+#
+#	Parameters
+#	@intermediateFile : list of dicts
+#	@SYMTAB : Dict, { symbol: address }
+#	@OPTAB : Dict, {Operation: OPCODE}
+#	@objectProgramPath : String
+#
+def run(intermediateFile,
+		 SYMTAB,
+		 objectProgramPath,
+		 reservedWords,
+		 opcodeTable):
+	'''
+	run(intermediateFile,
+		 SYMTAB,
+		 objectProgramPath,
+		 reservedWords,
+		 opcodeTable)->None
+	'''
+	records = []
+	programName = ''
+	startingAddress = hex(0)
+	programLength = 0
+	if intermediateFile[0]['operation'] == 'START':
+		programName = intermediateFile[0]['label']
+		startingAddress = util.formatHexString(
+											intermediateFile[0]['operand'][0])
+
+	endingAddress = 0
+	if intermediateFile[-1]['operation'] == 'END':
+		endingAddress = int(intermediateFile[-1]['location'], 16)
+	else:
+		endingAddress = int(intermediateFile[-1]['location'], 16) + \
+						intermediateFile[-1]['length']
+
+	programLength = endingAddress - int(startingAddress, 16)
+	records.append(
+			constructHeaderRecord(programName, startingAddress, programLength))
+	# write Header record to object program
+	# initialize first Text record
+	# Text record: T starting_address( bits) Length(8 bits) opcode
+	
+	intermediateFile = \
+			getObjectCode(intermediateFile, SYMTAB, reservedWords, opcodeTable)
+
+	textRecords = constructTextRecord(intermediateFile)
+	records = records + textRecords
+	endRecord = constructEndRecord(intermediateFile)
+	records = records + [endRecord]
+	return records

@@ -18,4 +18,7 @@ if __name__ == '__main__':
     opcodeTable = util.getOpcodeTable(
                     os.path.join(currDir, 'lib/resource/opcode') )
 
-    pass2.run(intermediateFile, SYMTAB, None, reservedWords, opcodeTable)
+    records = \
+        pass2.run(intermediateFile, SYMTAB, None, reservedWords, opcodeTable)
+    for record in records:
+        print record

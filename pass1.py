@@ -1,6 +1,8 @@
 import sys, os
 from lib import util
 
+
+
 #   perform pass one
 #   @fileName - file name (does not include directory)
 #   return - a dictionary : {'intermediate' : an array of assembly code (location included)
@@ -11,6 +13,8 @@ def run(fileName) :
     STARTING_ADDRESS = 0
     PROGRAM_LENGTH = 0
     SYMTAB = {}
+    LITTAB = []
+    LITARR = []
     OPTAB = {}
     ERROR = 0
     # end variables
@@ -68,6 +72,23 @@ def run(fileName) :
                 else :
                     SYMTAB[label] = util.decToHex(LOCCTR)
             # search OPTAB for opcode
+            # literal
+            if opcode == 'LTORG' :
+                # populate all literals up to now
+                for counter in range(len(LITTAB)) :
+                    currLiteral = LITTAB[counter]
+                    if currLiteral['location'] == None : # not yet assigned
+                        currLiteral['location'] = util.decToHex(LOCCTR)
+                        LOCCTR += currLiteral['length']
+                        # write into intermediate file
+                        newLine = {}
+                        newLine['format'] = 3
+                        newLine['label'] = None
+                        newLine['length'] = currLiteral['length']
+                        newLine['location'] = currLiteral['location']
+                        newLine['operation'] = currLiteral['name']
+                        newLine['operand'] = None
+                        revisedAssemblyCode.append(newLine)
             if OPTAB.has_key(opcode) :
                 LOCCTR += i['length']
             elif opcode == 'WORD' :
@@ -79,10 +100,39 @@ def run(fileName) :
             else :
                 # error
                 ERROR = 1
+            # operand
+            operand = i['operand']
+            # literal
+            if isLiteral(operand) :
+                # store into literal table
+                literalOperand = operand[0]
+                newLiteral = {}
+                newLiteral['name'] = literalOperand
+                newLiteral['value'] = buildLiteralValue(literalOperand) 
+                newLiteral['location'] = None
+                newLiteral['length'] = lengthOfLiteral(literalOperand)
+                if literalOperand not in LITARR : 
+                    LITTAB.append(newLiteral)
+                    LITARR.append(newLiteral['name'])
         else :
             # write last line to intermediate file (END)
             i['location'] = util.decToHex(LOCCTR)
             revisedAssemblyCode.append(i)
+            # populate LITTAB
+            for counter in range(len(LITTAB)) :
+                currLiteral = LITTAB[counter]
+                if currLiteral['location'] == None : # not yet assigned
+                    currLiteral['location'] = util.decToHex(LOCCTR)
+                    LOCCTR += currLiteral['length']
+                    # write into intermediate file
+                    newLine = {}
+                    newLine['format'] = 3
+                    newLine['label'] = None
+                    newLine['length'] = currLiteral['length']
+                    newLine['location'] = currLiteral['location']
+                    newLine['operation'] = currLiteral['name']
+                    newLine['operand'] = None
+                    revisedAssemblyCode.append(newLine)
             # save (LOCCTR - starting address) as program length
             PROGRAM_LENGTH = LOCCTR - STARTING_ADDRESS
             break
@@ -100,13 +150,15 @@ def run(fileName) :
     result = {}
     result['intermediate'] = revisedAssemblyCode
     result['SYMTAB'] = SYMTAB
+    result['LITTAB'] = LITTAB
     return result
 
 # sample run
-fileName = 'basic.txt'
+fileName = 'literals.txt'
 result = run(fileName)
 intermediate = result['intermediate']
 symtab = result['SYMTAB']
+littab = result['LITTAB']
 # print out intermediate
 print 'intermediate code: '
 for i in range(len(intermediate)) : 
@@ -115,4 +167,11 @@ print
 # print out SYMTAB
 print 'SYMTAB: '
 print symtab
+# print out LITTAB
+print 'LITTAB: '
+for i in range(len(littab)) :
+    print littab[i]
 # end sample run
+
+
+

@@ -233,3 +233,38 @@ def decToHex(string_num):
 def hexToDec(string_num):
     return str(int(string_num.upper(), 16))
 
+# literal processing functions
+
+# return true if operand is in literal format
+def isLiteral(operand) :
+    if operand == None :
+        return False
+    if operand[0][0] == '=' :
+        return True
+    else :
+        return False
+
+# return the length of a literal value (in bytes)
+def lengthOfLiteral(literal) :
+    litLength = 0
+    litType = literal[1]
+    if litType == 'C' :
+        litLength = len(literal) - 4
+    if litType == 'X' :
+        litLength = (len(literal) - 4) / 2
+    return litLength
+
+# build literal value
+# case 1) hexidecimal : directly output the literal value
+# case 2) character   : convert in to ascii code then output
+def buildLiteralValue(literal) :
+    literalType = literal[1]
+    literalString = literal[3: (len(literal) - 1) ]
+    if literalType == 'X' : # hexadecimal
+        return literalString
+    if literalType == 'C' : # char string
+        resultString = ''
+        for i in range(len(literalString)) :
+            resultString = resultString + str(ord(literalString[i]))
+        return resultString
+    return '00'

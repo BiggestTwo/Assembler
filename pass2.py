@@ -390,8 +390,9 @@ def getObjectCode(intermediateFile,
 					objectCode = literal['value']
 					break
 
+		if objectCode is not None:
+			objectCode = util.formatHexString(objectCode)
 		intermediateFile[index]['objectCode'] = objectCode
-		print objectCode
 
 	return intermediateFile
 #

@@ -1,7 +1,34 @@
 import sys, os
 from lib import util
 
-
+#   takes an expression as one of the three cases
+#   a) * (curr location)
+#   b) a symbol ( can be found in SYMTAB )
+#   c) an expression involves two symbols (e.g. A - B or A + B)
+#   returns the result IN HEXADECIMAL
+def parseExpression(exp, SYMTAB, LOCCTR) :
+    # case 1) * (curr location)
+    if len(exp) == 1 and exp == '*' :
+        return util.decToHex(LOCCTR)
+    # case 2) not an expression
+    if '+' not in exp and '-' not in exp :
+        # find the location of this symbol from SYMTAB 
+        return SYMTAB[exp]
+    else : # case 3) an expression (+ or -)
+        # find both symbols from SYMTAB and do a calculation
+        if '+' in exp :
+            pos = exp.find('+')
+            op1 = exp[0:pos]
+            op2 = exp[(pos + 1): len(exp)]
+            result = int(util.hexToDec(str(SYMTAB[op1]))) + int(util.hexToDec(str(SYMTAB[op2])))
+            return util.decToHex(result)
+        if '-' in exp :
+            pos = exp.find('-')
+            op1 = exp[0:pos]
+            op2 = exp[(pos + 1): len(exp)]
+            result = int(util.hexToDec(str(SYMTAB[op1]))) - int(util.hexToDec(str(SYMTAB[op2])))
+            return util.decToHex(result)
+    return ''
 
 #   perform pass one
 #   @fileName - file name (does not include directory)
@@ -42,8 +69,8 @@ def run(fileName) :
     revisedAssemblyCode = []
     firstLine = 0
     for i in util.ParseFile( fileDir, reservedWords, opcodeTablePath ):
-        # print i
         opcode = i['operation']
+        operand = i['operand']
         # read first line to see if START exists
         if firstLine == 0:
             firstLine = 1
@@ -72,6 +99,11 @@ def run(fileName) :
                 else :
                     SYMTAB[label] = util.decToHex(LOCCTR)
             # search OPTAB for opcode
+            # symbol defining
+            if opcode == 'EQU' :
+                # put the label into SYMTAB with its operand as value (immediate addressing)
+                resultOfExpression = parseExpression(operand[0], SYMTAB, LOCCTR)
+                SYMTAB[i['label']] = resultOfExpression
             # literal
             if opcode == 'LTORG' :
                 # populate all literals up to now
@@ -95,13 +127,13 @@ def run(fileName) :
                 LOCCTR += 3
             elif opcode == 'RESW' :
                 LOCCTR += 3 * int(i['operand'][0])
-            # elif opcode == 'BYTE' :
-                # find length of constant
+            elif opcode == 'RESB' :
+                LOCCTR += int(i['operand'][0])
             else :
                 # error
                 ERROR = 1
             # operand
-            operand = i['operand']
+
             # literal
             if util.isLiteral(operand) :
                 # store into literal table

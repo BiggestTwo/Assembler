@@ -232,7 +232,7 @@ def decToHex(string_num):
         result = result + mid[len(mid) - i - 1]
     return result
 def hexToDec(string_num):
-    return str(int(string_num.upper(), 16))
+    return str(int(string_num, 16))
 
 # literal processing functions
 

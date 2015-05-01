@@ -103,14 +103,14 @@ def run(fileName) :
             # operand
             operand = i['operand']
             # literal
-            if isLiteral(operand) :
+            if util.isLiteral(operand) :
                 # store into literal table
                 literalOperand = operand[0]
                 newLiteral = {}
                 newLiteral['name'] = literalOperand
-                newLiteral['value'] = buildLiteralValue(literalOperand) 
+                newLiteral['value'] = util.buildLiteralValue(literalOperand) 
                 newLiteral['location'] = None
-                newLiteral['length'] = lengthOfLiteral(literalOperand)
+                newLiteral['length'] = util.lengthOfLiteral(literalOperand)
                 if literalOperand not in LITARR : 
                     LITTAB.append(newLiteral)
                     LITARR.append(newLiteral['name'])

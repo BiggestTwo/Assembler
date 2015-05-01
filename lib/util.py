@@ -266,6 +266,6 @@ def buildLiteralValue(literal) :
     if literalType == 'C' : # char string
         resultString = ''
         for i in range(len(literalString)) :
-            resultString = resultString + str(ord(literalString[i]))
+            resultString = resultString + decToHex(str(ord(literalString[i])))
         return resultString
     return '00'

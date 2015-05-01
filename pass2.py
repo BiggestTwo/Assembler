@@ -73,6 +73,11 @@ def assembleThreePC( opcode, operand, PC, TA, XOnly, base = None ):
 		x = '0'
 	n = i = '1'
 
+	if operand[0][0] == '@':
+		# indirect addressing
+		n = '1'
+		i = '0'
+
 	# decimal displacement
 	disp = int(TA, 16) - int(PC, 16)
 	if disp < 0:
@@ -126,18 +131,52 @@ def assembleFormatOne( opcode ):
 	objectCode = util.formatHexString( opcode )
 	return objectCode
 
+def calculateTargetAddress(operand, SYMTAB, reservedWords, LITTAB):
+	"""
+	calculateTargetAddress(operand, SYMTAB, reservedWords)->String
+	calculate the TA of an Instruction, hexadecimal string
+	"""
+	TA = hex(0)
+	labelString = checkLabel(operand, reservedWords)
+	if labelString is not None:
+		if labelString in SYMTAB.keys():
+			# This is a defined label
+			TA = SYMTAB[labelString]
+		elif labelString[0] == '#':
+			# immediate addressing
+			try:
+				# e.x., #0
+				TA = int(labelString[1:])
+				TA = hex(TA)
+			except:
+				# e.x., #LENGTH
+				if labelString[1:] in SYMTAB.keys():
+					TA = SYMTAB[labelString[1:]]
+		elif len(labelString) >= 4 and labelString[0] == '=':
+			# literal
+			for literal in LITTAB:
+				if literal['name'] == labelString:
+					TA = literal['location']
+					break
+
+		elif len(labelString) >= 2 and labelString[0] == '@':
+			# indirect addressing
+			if labelString[1:] in SYMTAB.keys():
+				TA = SYMTAB[labelString[1:]]
+
+	return TA
+
 def assembleInstructon(	opcode,
 						operand,
 						operandFormat,
 						SYMTAB,
 						PC,
 						reservedWords,
+						LITTAB,
 						XOnly = True,
 						Base = None):
     TA = hex(0)
-    labelString = checkLabel(operand, reservedWords)
-    if (labelString is not None) and (labelString in SYMTAB.keys()):
-    	TA = SYMTAB[labelString]
+    TA = calculateTargetAddress(operand, SYMTAB, reservedWords, LITTAB)
 
     if operandFormat == 1:
 		return assembleFormatOne(opcode)
@@ -288,7 +327,8 @@ def constructTextRecord( intermediateFile ):
 def getObjectCode(intermediateFile,
 				 SYMTAB,
 				 reservedWords,
-				 opcodeTable):
+				 opcodeTable,
+				 LITTAB):
 	for index, intermediateCode in enumerate(intermediateFile):
 		operation = intermediateCode['operation']
 		if operation == 'START':
@@ -319,6 +359,7 @@ def getObjectCode(intermediateFile,
 											SYMTAB,
 											PC,
 											reservedWords,
+											LITTAB,
 											XOnly )
 		elif opcode is None and operation == 'BYTE':
 			# covert constant to object code
@@ -328,7 +369,7 @@ def getObjectCode(intermediateFile,
 				op = int(op)
 				objectCode = hex(op)[2:]
 			except:
-				# character , e.g. X'05'
+				# Hex character , e.g. X'05'
 				objectCode = op[2:4]
 
 		elif opcode is None and operation == 'WORD':
@@ -338,10 +379,19 @@ def getObjectCode(intermediateFile,
 				op = int(op)
 				objectCode = hex(op)[2:]
 			except:
-				# characters, e.g. X'05'
+				# Hex characters, e.g. X'05'
 				objectCode = op[2:len(op)-1]
 
+		elif len(operation) >= 4 and operation[0] == '=':
+			# for literal generation
+			# find the value from the LITTAB table
+			for literal in LITTAB:
+				if literal['name'] == operation:
+					objectCode = literal['value']
+					break
+
 		intermediateFile[index]['objectCode'] = objectCode
+		print objectCode
 
 	return intermediateFile
 #
@@ -355,7 +405,8 @@ def run(intermediateFile,
 		 SYMTAB,
 		 objectProgramPath,
 		 reservedWords,
-		 opcodeTable):
+		 opcodeTable,
+		 LITTAB = None):
 	'''
 	run(intermediateFile,
 		 SYMTAB,
@@ -386,8 +437,11 @@ def run(intermediateFile,
 	# initialize first Text record
 	# Text record: T starting_address( bits) Length(8 bits) opcode
 	
-	intermediateFile = \
-			getObjectCode(intermediateFile, SYMTAB, reservedWords, opcodeTable)
+	intermediateFile = getObjectCode(intermediateFile,
+									SYMTAB,
+									reservedWords,
+									opcodeTable,
+									LITTAB)
 
 	textRecords = constructTextRecord(intermediateFile)
 	records = records + textRecords

@@ -118,6 +118,7 @@ def lineProcess(line, reservedWordTable, opcodeTable):
                # check if extended later
                if extendedFlag == 1:
                    instruction['length'] = 4
+                   instruction['format'] = 4
             else:
                 # there is a label
                 instruction['label'] = firstWordBackup

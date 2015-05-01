@@ -254,6 +254,15 @@ def lengthOfLiteral(literal) :
     if litType == 'X' :
         litLength = (len(literal) - 4) / 2
     return litLength
+# return the length of a literal value (in bytes)
+def lengthOfVariable(variable) :
+    varLength = 0
+    varType = variable[0]
+    if varType == 'C' :
+        varLength = len(variable) - 3
+    if varType == 'X' :
+        varLength = (len(variable) - 3) / 2
+    return varLength
 
 # build literal value
 # case 1) hexidecimal : directly output the literal value

@@ -129,6 +129,8 @@ def run(fileName) :
                 LOCCTR += 3 * int(i['operand'][0])
             elif opcode == 'RESB' :
                 LOCCTR += int(i['operand'][0])
+            elif opcode == 'BYTE' :
+                LOCCTR += util.lengthOfVariable(i['operand'][0])
             else :
                 # error
                 ERROR = 1

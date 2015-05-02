@@ -81,6 +81,9 @@ def lineProcess(line, reservedWordTable, opcodeTable):
         length = line.find('.')
         line = line[:length]
 
+    if len(line) <= 0:
+        return None
+
     #get rid of leading/trailing spaces
     instruction = \
             {'label': None, 'operation': None, 'operand':None, 'length':0,\
@@ -210,8 +213,9 @@ def ParseFile( FilePath,
     for line in lines:
         line = line.strip()
         if line != "":
-            assembleInstructions.append(
-                            lineProcess(line, reservedWordTable, opcodeTable) )
+            tempLineResult = lineProcess(line, reservedWordTable, opcodeTable)
+            if tempLineResult is not None:
+                assembleInstructions.append( tempLineResult )
 
     return assembleInstructions
 

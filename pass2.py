@@ -67,13 +67,13 @@ def assembleThreePC( opcode, operand, PC, TA, XOnly, base = None ):
 	e = '0'
 	b = '0'
 	p = '1'
-	if len( operand ) > 1:
+	if operand is not None and len( operand ) > 1:
 		x = '1'
 	else:
 		x = '0'
 	n = i = '1'
 
-	if operand[0][0] == '@':
+	if operand is not None and operand[0][0] == '@':
 		# indirect addressing
 		n = '1'
 		i = '0'
@@ -92,7 +92,7 @@ def assembleThreePC( opcode, operand, PC, TA, XOnly, base = None ):
 
 def assembleFormatThree(opcode, operand, PC, TA, SYMTAB, XOnly, base = None):
 	objectCode = None
-	if operand[0][0] == '#':
+	if operand is not None and operand[0][0] == '#':
 		## immediate addressing
 		objectCode = \
 			assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB, XOnly, base)
@@ -194,6 +194,8 @@ def checkLabel( operand, reservedWords):
 		find those operands that are symbols
 		return symbol or None
 	"""
+	if operand is None:
+		return None
 	for op in operand:
 		if op not in reservedWords and op[0] != '#':
 			return op
@@ -393,6 +395,9 @@ def getObjectCode(intermediateFile,
 		if objectCode is not None:
 			objectCode = util.formatHexString(objectCode)
 		intermediateFile[index]['objectCode'] = objectCode
+
+		if objectCode is not None:
+			print objectCode.upper()
 
 	return intermediateFile
 #

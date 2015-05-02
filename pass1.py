@@ -217,7 +217,9 @@ def run(fileName) :
                 # find its block
                 blockNumber = BLKASSIGN[symbol]
                 # calculate (new address = former address + start of its block)
-                newLocation = address + BLKTAB[blockNumber]['address']
+                newLocation = util.hexToDec(address) + util.hexToDec(BLKTAB[blockNumber]['address'])
+                newLocation = util.decToHex(newLocation)
+                SYMTAB[symbol] = newLocation
             # re-assign addresses to lines in each block
             # CDATA
             for line in range(len(revisedAssemblyCode[1])) :
@@ -248,6 +250,7 @@ def run(fileName) :
             # CBLKS
             for line in range(len(revisedAssemblyCode[2])) :
                 mergedAssemblyCode.append(revisedAssemblyCode[2][line])
+
             # save (LOCCTR[2] - starting address) as program length
             PROGRAM_LENGTH = LOCCTR[2] - STARTING_ADDRESS
             break

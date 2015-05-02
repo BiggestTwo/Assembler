@@ -217,7 +217,8 @@ def run(fileName) :
                 # find its block
                 blockNumber = BLKASSIGN[symbol]
                 # calculate (new address = former address + start of its block)
-                newLocation = util.hexToDec(address) + util.hexToDec(BLKTAB[blockNumber]['address'])
+                newLocation = int(util.hexToDec(address) ) \
+                            + int(util.hexToDec(BLKTAB[blockNumber]['address']) )
                 newLocation = util.decToHex(newLocation)
                 SYMTAB[symbol] = newLocation
             # re-assign addresses to lines in each block

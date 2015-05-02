@@ -3,9 +3,7 @@ from lib.util import fourBitBin
 def assembleFormatFour( opcode,
 						operand,
 						PC,
-						TA,
-						XOnly,
-						base = None):
+						TA):
 	#op n x b p e address
 	opcode = util.formatHexString( opcode )
 	op1 = fourBitBin(int(opcode[2], 16))[2:]
@@ -36,7 +34,7 @@ def assembleFormatFour( opcode,
 		objectCode = '0x' + '0' + objectCode[2:]
 	return objectCode
 
-def assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB, XOnly, base = None):
+def assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB, base = None):
 	#op n i x b p e disp
 	opcode = util.formatHexString(opcode)
 	op1 = fourBitBin(int(opcode[2], 16))[2:]
@@ -61,7 +59,7 @@ def assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB, XOnly, base = None):
 	objectCode = op1 + op2 + n + i + x + b + p + e + disp
 	return objectCode
 
-def assembleThreePC( opcode, operand, PC, TA, XOnly, base = None ):
+def assembleThreePC( opcode, operand, PC, TA):
 
 	#op n i x b p e disp
 	opcode = util.formatHexString( opcode )
@@ -141,12 +139,12 @@ def assembleThreeNoOperand(opcode):
 	objectCode = op1 + op2 + n + i + x + b + p + e + disp
 	return objectCode
 
-def assembleFormatThree(opcode, operand, PC, TA, SYMTAB, XOnly, base = None):
+def assembleFormatThree(opcode, operand, PC, TA, SYMTAB):
 	objectCode = None
 	if operand is not None and operand[0][0] == '#':
 		## immediate addressing
 		objectCode = \
-			assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB, XOnly, base)
+			assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB )
 	elif operand is None:
 		# e.x., RSUB
 		objectCode = assembleThreeNoOperand(opcode)
@@ -156,7 +154,7 @@ def assembleFormatThree(opcode, operand, PC, TA, SYMTAB, XOnly, base = None):
 			# base relative needed
 			objectCode = assembleThreeBase(opcode, operand, PC, TA, SYMTAB)
 		else:
-			objectCode = assembleThreePC(opcode, operand, PC, TA, XOnly, base)
+			objectCode = assembleThreePC(opcode, operand, PC, TA)
 
 	objectCode = hex(int(objectCode, 2))
 	while len(objectCode[2:]) < 6:
@@ -231,9 +229,7 @@ def assembleInstructon(	opcode,
 						SYMTAB,
 						PC,
 						reservedWords,
-						LITTAB,
-						XOnly = True,
-						Base = None):
+						LITTAB):	
     TA = hex(0)
     TA = calculateTargetAddress(operand, SYMTAB, reservedWords, LITTAB)
 
@@ -242,9 +238,9 @@ def assembleInstructon(	opcode,
     elif operandFormat == 2:
 		return assembleFormatTwo(opcode, operand, SYMTAB)
     elif operandFormat == 3:
-		return assembleFormatThree(opcode, operand, PC, TA, SYMTAB, XOnly, Base)
+		return assembleFormatThree(opcode, operand, PC, TA, SYMTAB)
     elif operandFormat == 4:
-		return assembleFormatFour(opcode, operand, PC, TA, XOnly, Base)
+		return assembleFormatFour(opcode, operand, PC, TA)
 
 def checkLabel( operand, reservedWords):
 	""" checkLabel( operand, reservedWords) -> String
@@ -391,6 +387,7 @@ def getObjectCode(intermediateFile,
 				 opcodeTable,
 				 LITTAB):
 	for index, intermediateCode in enumerate(intermediateFile):
+		print intermediateCode
 		operation = intermediateCode['operation']
 		if operation == 'START':
 			continue
@@ -413,9 +410,6 @@ def getObjectCode(intermediateFile,
 		operandFormat = intermediateCode['format']
 		PC = int(intermediateCode['location'], 16) + intermediateCode['length']
 		PC = hex(PC)
-		XOnly = True
-		if opcode is not None and opcodeTable[operation]['note'] != 'X':
-			XOnly = False
 
 		if  operation == 'END':
 			# end of the file
@@ -429,8 +423,7 @@ def getObjectCode(intermediateFile,
 											SYMTAB,
 											PC,
 											reservedWords,
-											LITTAB,
-											XOnly )
+											LITTAB)
 		elif opcode is None and operation == 'BYTE':
 			# covert constant to object code
 			op = operand[0]
@@ -452,7 +445,8 @@ def getObjectCode(intermediateFile,
 				# Hex characters, e.g. X'05'
 				objectCode = op[2:len(op)-1]
 
-		elif len(operation) >= 4 and operation[0] == '=':
+		elif operation is not None and \
+									len(operation) >= 4 and operation[0] == '=':
 			# for literal generation
 			# find the value from the LITTAB table
 			for literal in LITTAB:

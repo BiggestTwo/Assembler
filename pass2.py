@@ -20,6 +20,10 @@ def assembleFormatFour( opcode,
 		x = '0'
 
 	n = i = '1'
+	if operand is not None:
+		if len(operand[0]) > 2 and operand[0][0] == '#':
+			n = '0'
+			i = '1'
 	# decimal displacement
 	address = int(TA, 16)
 	address = bin(address)[2:]
@@ -90,14 +94,69 @@ def assembleThreePC( opcode, operand, PC, TA, XOnly, base = None ):
 	objectCode = op1 + op2 + n + i + x + b + p + e + disp
 	return objectCode
 
+def assembleThreeBase(opcode, operand, PC, TA, SYMTAB):
+	# op n i x b p e disp
+	opcode = util.formatHexString( opcode )
+	op1 = fourBitBin(int(opcode[2], 16))[2:]
+	op2 = fourBitBin(int(opcode[3], 16))[2:4]
+	e = '0'
+	b = '1'
+	p = '0'
+	# check for indexing addressing
+	if operand is not None and len( operand ) > 1:
+		x = '1'
+	else:
+		x = '0'
+	n = i = '1'
+	# check for indrect
+	if operand is not None and operand[0][0] == '@':
+		# indirect addressing
+		n = '1'
+		i = '0'	
+	# decimal displacement
+	if 'BASE' in SYMTAB:
+		baseValue = SYMTAB['BASE']
+	disp = int(TA, 16) - int(baseValue, 16)
+	if disp < 0:
+		# use 2's complement for negative number
+		disp = util.towsCompliment(disp, 12)
+	else:
+		disp = bin(disp)[2:]
+		while len(disp) < 12:
+			disp = '0' + disp
+	objectCode = op1 + op2 + n + i + x + b + p + e + disp
+	return objectCode
+
+def assembleThreeNoOperand(opcode):
+	# op n i x b p e disp
+	opcode = util.formatHexString( opcode )
+	op1 = fourBitBin(int(opcode[2], 16))[2:]
+	op2 = fourBitBin(int(opcode[3], 16))[2:4]
+	e = '0'
+	b = '0'
+	p = '0'
+	n = i = '1'
+	x = '0'
+	disp = '0' * 12
+	objectCode = op1 + op2 + n + i + x + b + p + e + disp
+	return objectCode
+
 def assembleFormatThree(opcode, operand, PC, TA, SYMTAB, XOnly, base = None):
 	objectCode = None
 	if operand is not None and operand[0][0] == '#':
 		## immediate addressing
 		objectCode = \
 			assembleThreeImmediate(opcode, operand, PC, TA, SYMTAB, XOnly, base)
+	elif operand is None:
+		# e.x., RSUB
+		objectCode = assembleThreeNoOperand(opcode)
 	else:
-		objectCode = assembleThreePC(opcode, operand, PC, TA, XOnly, base)
+		disp = int(TA, 16) - int(PC, 16)
+		if disp < -2048:
+			# base relative needed
+			objectCode = assembleThreeBase(opcode, operand, PC, TA, SYMTAB)
+		else:
+			objectCode = assembleThreePC(opcode, operand, PC, TA, XOnly, base)
 
 	objectCode = hex(int(objectCode, 2))
 	while len(objectCode[2:]) < 6:
@@ -197,7 +256,7 @@ def checkLabel( operand, reservedWords):
 	if operand is None:
 		return None
 	for op in operand:
-		if op not in reservedWords and op[0] != '#':
+		if op not in reservedWords: 
 			return op
 	return None
 
@@ -336,6 +395,15 @@ def getObjectCode(intermediateFile,
 		if operation == 'START':
 			continue
 
+		if operation == 'BASE':
+			# sotre the value of the base
+			operand = intermediateCode['operand'][0]
+			if operand in SYMTAB.keys():
+				SYMTAB['BASE'] = SYMTAB[operand]
+			else:
+				# set an error
+				pass
+
 		if operation in opcodeTable.keys():
 			opcode = opcodeTable[operation]['opcode']
 		else:
@@ -351,7 +419,7 @@ def getObjectCode(intermediateFile,
 
 		if  operation == 'END':
 			# end of the file
-			break
+			continue
 		objectCode = None
 		if opcode is not None:	
 			# Assemble the object code
@@ -395,9 +463,6 @@ def getObjectCode(intermediateFile,
 		if objectCode is not None:
 			objectCode = util.formatHexString(objectCode)
 		intermediateFile[index]['objectCode'] = objectCode
-
-		if objectCode is not None:
-			print objectCode.upper()
 
 	return intermediateFile
 #

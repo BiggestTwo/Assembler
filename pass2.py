@@ -387,7 +387,6 @@ def getObjectCode(intermediateFile,
 				 opcodeTable,
 				 LITTAB):
 	for index, intermediateCode in enumerate(intermediateFile):
-		print intermediateCode
 		operation = intermediateCode['operation']
 		if operation == 'START':
 			continue

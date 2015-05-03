@@ -289,6 +289,8 @@ def run(fileName) :
     result['LITTAB'] = LITTAB
     return result
 
+'''
+
 # sample run
 fileName = 'prog_blocks.txt'
 result = run(fileName)
@@ -309,5 +311,6 @@ for i in range(len(littab)) :
     print littab[i]
 # end sample run
 
+'''
 
 

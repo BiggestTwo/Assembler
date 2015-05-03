@@ -200,7 +200,10 @@ def getReservedWordTable( filePath ):
 #   return - A parse array of assemble instructions
 def ParseFile( FilePath,
                reserveTablePath,
-               opcodeTablePath ):
+               opcodeTablePath,
+               MACROLabels = []):
+    '''
+    '''
     reservedWordTable = getReservedWordTable( reserveTablePath )
     opcodeTable = getOpcodeTable( opcodeTablePath )
 

@@ -116,9 +116,13 @@ def run(fileName) :
 
     # read from assembly file
     assemblyFile = open(fileDir)
-    for currLine in assemblyFile :
+    linesOfCode = assemblyFile.readlines()
+    lineIndex = 0
+    while lineIndex < len(linesOfCode) :
+        
+        currLine = linesOfCode[lineIndex]
         i = util.ParseLine( currLine, reservedWords, opcodeTablePath, macroLabels )
-        print i
+        lineIndex = lineIndex + 1
         if i == None :
             continue
         # check if in process of macro processing
@@ -127,8 +131,8 @@ def run(fileName) :
                 # end macro processing
                 MACRO_FLAG = False
                 continue
-            # read this line into current macro
-            MCRTAB[CURR_MACRO]['code'].append(i)
+            # read this line into current macro (raw string instead of dict)
+            MCRTAB[CURR_MACRO]['code'].append(currLine)
             continue
         opcode = i['operation']
         operand = i['operand']
@@ -200,7 +204,7 @@ def run(fileName) :
                 elif operand[0] == 'CBLKS' :
                     currBLK = 2
                 continue
-            # macro
+            # macro definition
             if opcode == 'MACRO' :
                 # macro flag up
                 MACRO_FLAG = True
@@ -213,6 +217,21 @@ def run(fileName) :
                 CURR_MACRO = i['label']
                 macroLabels.append(i['label'])
                 continue
+            # macro expansion
+            if opcode in macroLabels :
+                # insert definitions into main program 
+                # before this, replace parameters with variables
+                macroName = opcode
+                macroParameters = MCRTAB[macroName]['variable']
+                variables = operand
+                macroCode = MCRTAB[macroName]['code']
+                for j in range(len(macroCode)) :
+                    currCode = macroCode[j]
+                    # substitute if parameter exists in operand field
+                    for k in range(len(macroParameters)) :
+                        currCode = currCode.replace(macroParameters[k], variables[k])
+                    # insert into main program
+                    linesOfCode.insert( (lineIndex + j), currCode)
             # normal condition
             if OPTAB.has_key(opcode) :
                 LOCCTR[currBLK] += i['length']
@@ -237,6 +256,7 @@ def run(fileName) :
                 newLiteral['name'] = literalOperand
                 newLiteral['value'] = util.buildLiteralValue(literalOperand) 
                 newLiteral['length'] = util.lengthOfLiteral(literalOperand)
+                newLiteral['location'] = None
                 if literalOperand not in LITARR : 
                     LITTAB.append(newLiteral)
                     LITARR.append(newLiteral['name'])
@@ -354,6 +374,7 @@ def run(fileName) :
     result['intermediate'] = mergedAssemblyCode
     result['SYMTAB'] = SYMTAB
     result['LITTAB'] = LITTAB
+    print MCRTAB['RDBUFF']
     return result
 
 

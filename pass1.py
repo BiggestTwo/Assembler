@@ -120,6 +120,8 @@ def run(fileName) :
                     if currLiteral['location'] == None : # not yet assigned
                         currLiteral['location'] = util.decToHex(LOCCTR[currBLK])
                         LOCCTR[currBLK] += currLiteral['length']
+                        # record its program block
+                        BLKASSIGN[currLiteral['name']] = currBLK
                         # write into intermediate file
                         newLine = {}
                         newLine['format'] = 3
@@ -179,6 +181,8 @@ def run(fileName) :
                 if currLiteral['location'] == None : # not yet assigned
                     currLiteral['location'] = util.decToHex(LOCCTR[currBLK])
                     LOCCTR[currBLK] += currLiteral['length']
+                    # record its program block
+                    BLKASSIGN[currLiteral['name']] = currBLK
                     # write into intermediate file
                     newLine = {}
                     newLine['format'] = 3
@@ -210,7 +214,7 @@ def run(fileName) :
             newDict['length'] = util.decToHex(LOCCTR[2])
             BLKTAB.append(newDict)
 
-            # re-assign address to symbols in SYMTAB
+            # re-assign address to symbols in SYMTAB and LITTAB
             # new address should be relative to the start of the whole program
             # (instead of relative to the start of its program block)
             for symbol, address in SYMTAB.items() :
@@ -221,6 +225,13 @@ def run(fileName) :
                             + int(util.hexToDec(BLKTAB[blockNumber]['address']) )
                 newLocation = util.decToHex(newLocation)
                 SYMTAB[symbol] = newLocation
+            for index in range(len(LITTAB)) :
+                currLocation = LITTAB[index]['location'] # hex
+                blockNumber = BLKASSIGN[LITTAB[index]['name']]
+                newLocation = int(util.hexToDec(currLocation) ) \
+                            + int(util.hexToDec(BLKTAB[blockNumber]['address']))
+                newLocation = util.decToHex(newLocation)
+                LITTAB[index]['location'] = newLocation 
             # re-assign addresses to lines in each block
             # CDATA
             for line in range(len(revisedAssemblyCode[1])) :

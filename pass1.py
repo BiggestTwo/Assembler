@@ -112,6 +112,9 @@ def run(fileName) :
                 # put the label into SYMTAB with its operand as value (immediate addressing)
                 resultOfExpression = parseExpression(operand[0], SYMTAB, LOCCTR[currBLK])
                 SYMTAB[i['label']] = resultOfExpression
+                # delete this symbol from BLKASSIGN if the value is absolute value
+                if '-' in operand[0] :
+                    del BLKASSIGN[i['label']]
             # literal
             if opcode == 'LTORG' :
                 # populate all literals up to now
@@ -219,6 +222,9 @@ def run(fileName) :
             # (instead of relative to the start of its program block)
             for symbol, address in SYMTAB.items() :
                 # find its block
+                if symbol not in BLKASSIGN.keys() :
+                    print symbol
+                    continue
                 blockNumber = BLKASSIGN[symbol]
                 # calculate (new address = former address + start of its block)
                 newLocation = int(util.hexToDec(address) ) \

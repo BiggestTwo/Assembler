@@ -20,13 +20,42 @@ def parseExpression(exp, SYMTAB, LOCCTR) :
             pos = exp.find('+')
             op1 = exp[0:pos]
             op2 = exp[(pos + 1): len(exp)]
-            result = int(util.hexToDec(str(SYMTAB[op1]))) + int(util.hexToDec(str(SYMTAB[op2])))
+            result1 = 0
+            result2 = 0
+            if op1 == '*' : # curr location
+                result1 = LOCCTR
+            elif op1.isdigit() : # number
+                result1 = op1 
+            else : # symbol
+                result1 = int(util.hexToDec(str(SYMTAB[op1]))) 
+            if op2 == '*' : # curr location
+                result2 = LOCCTR
+            elif op2.isdigit() : # number
+                result2 = op2
+            else : # symbol
+                result2 = int(util.hexToDec(str(SYMTAB[op2]))) 
+
+            result = int(result1) + int(result2)
             return util.decToHex(result)
         if '-' in exp :
             pos = exp.find('-')
             op1 = exp[0:pos]
             op2 = exp[(pos + 1): len(exp)]
-            result = int(util.hexToDec(str(SYMTAB[op1]))) - int(util.hexToDec(str(SYMTAB[op2])))
+            result1 = 0
+            result2 = 0
+            if op1 == '*' : # curr location
+                result1 = LOCCTR
+            elif op1.isdigit() : # number
+                result1 = op1 
+            else : # symbol
+                result1 = int(util.hexToDec(str(SYMTAB[op1]))) 
+            if op2 == '*' : # curr location
+                result2 = LOCCTR
+            elif op2.isdigit() : # number
+                result2 = op2
+            else : # symbol
+                result2 = int(util.hexToDec(str(SYMTAB[op2]))) 
+            result = int(result1) - int(result2)
             return util.decToHex(result)
     return ''
 
@@ -45,6 +74,9 @@ def run(fileName) :
     BLKTAB = []
     LITTAB = []
     LITARR = []
+    MCRTAB = {}
+    MACRO_FLAG = False
+    CURR_MACRO = ''
     OPTAB = {}
     ERROR = 0
     # end variables
@@ -59,7 +91,6 @@ def run(fileName) :
         code = opPair[1]
         code = code.replace('\n', '')
         OPTAB[op] = code
-    # print OPTAB
 
     # file directory
     currDir = os.path.split( os.path.realpath(__file__) )[0]
@@ -67,7 +98,12 @@ def run(fileName) :
     fileDir = os.path.join(testFolder, fileName)
     reservedWords = os.path.join(currDir, './lib/resource/reservedWord')
     opcodeTablePath = os.path.join( currDir, './lib/resource/opcode')
-
+    macroLabels = []
+    # find all macro labels
+    # for i in util.ParseFile( fileDir, reservedWords, opcodeTablePath ) :
+    #     operation = i['operation']
+    #     if operation == 'MACRO' :
+    #         MCRTAB[i['label']] = {}
     # begin (read assembly code line by line)
     revisedAssemblyCode_BLK1 = []
     revisedAssemblyCode_BLK2 = []
@@ -75,7 +111,21 @@ def run(fileName) :
     revisedAssemblyCode = [revisedAssemblyCode_BLK1, 
             revisedAssemblyCode_BLK2, revisedAssemblyCode_BLK3]
     firstLine = 0
-    for i in util.ParseFile( fileDir, reservedWords, opcodeTablePath ):
+    # read from assembly file
+    assemblyFile = open(fileDir)
+    for currLine in assemblyFile :
+        i = util.ParseLine( currLine, reservedWords, opcodeTablePath, macroLabels ) :
+        if i == None :
+            continue
+        # check if in process of macro processing
+        if MACRO_FLAG == True :
+            if i['operation'] == 'MEND' :
+                # end macro processing
+                MACRO_FLAG = False
+                continue
+            # read this line into current macro
+            MCRTAB[CURR_MACRO]['code'].append(i)
+            continue
         opcode = i['operation']
         operand = i['operand']
         # read first line to see if START exists
@@ -87,7 +137,7 @@ def run(fileName) :
                 LOCCTR[currBLK] = STARTING_ADDRESS
                 # write line to intermediate file
                 i['location'] = None
-                revisedAssemblyCode.append(i)
+                revisedAssemblyCode[currBLK].append(i)
                 # read next input line
                 continue
             else :
@@ -146,6 +196,18 @@ def run(fileName) :
                 elif operand[0] == 'CBLKS' :
                     currBLK = 2
                 continue
+            # macro
+            if opcode == 'MACRO' :
+                # macro flag up
+                MACRO_FLAG = True
+                # store this macro into MCRTAB
+                newMacro = {}
+                variableArr = operand
+                newMacro['variable'] = variableArr
+                newMacro['code'] = []
+                MCRTAB[i['label']] = newMacro
+                CURR_MACRO = i['label']
+                continue
             # normal condition
             if OPTAB.has_key(opcode) :
                 LOCCTR[currBLK] += i['length']
@@ -169,11 +231,11 @@ def run(fileName) :
                 newLiteral = {}
                 newLiteral['name'] = literalOperand
                 newLiteral['value'] = util.buildLiteralValue(literalOperand) 
-                newLiteral['location'] = None
                 newLiteral['length'] = util.lengthOfLiteral(literalOperand)
                 if literalOperand not in LITARR : 
                     LITTAB.append(newLiteral)
                     LITARR.append(newLiteral['name'])
+
         else :
             # write last line to intermediate file (END)
             i['location'] = util.decToHex(LOCCTR[currBLK])
@@ -292,7 +354,7 @@ def run(fileName) :
 '''
 
 # sample run
-fileName = 'prog_blocks.txt'
+fileName = 'macros.txt'
 result = run(fileName)
 intermediate = result['intermediate']
 symtab = result['SYMTAB']

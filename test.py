@@ -1,2 +1,4 @@
-str = '3.141.5926'
-print str.find('.', 2)
+file = open('./test/testFiles/macros.txt')
+for line in file :
+    print line,
+    

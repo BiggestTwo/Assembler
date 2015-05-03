@@ -59,7 +59,14 @@ class TestUtilFunctions(unittest.TestCase):
         reservedWords = os.path.join(currDir, '../lib/resource/reservedWord')
         opcodeTablePath = os.path.join( currDir, '../lib/resource/opcode')
 
-        lines = util.ParseFile( basicFile, reservedWords, opcodeTablePath)
+        reservedWordTable = util.getReservedWordTable( reservedWords )
+        opcodeTable = util.getOpcodeTable( opcodeTablePath )
+        f = open( basicFile )
+        for line in f:
+            line = util.ParseLine(line, reservedWordTable, opcodeTable)
+            print line        
+        f.close()
+
 
     def tearDown(self):
         pass

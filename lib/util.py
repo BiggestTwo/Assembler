@@ -74,7 +74,7 @@ def formatBinString(binString):
     return binString
 
 
-def lineProcess(line, reservedWordTable, opcodeTable):
+def lineProcess(line, reservedWordTable, opcodeTable, MACROLabels):
     # for each line, check if it is a comment or
     if line.find('.') != -1:
     # get rid of the comment part
@@ -97,8 +97,8 @@ def lineProcess(line, reservedWordTable, opcodeTable):
         if state == 0:
             match = re.match(wordPattern, line)
             if match is None:
-                # no match, return None
-                return instruction
+                # no single word found, return None
+                return None
 
             # set to 1 where there's a leading '+' on the operation
             extendedFlag = 0
@@ -109,7 +109,7 @@ def lineProcess(line, reservedWordTable, opcodeTable):
                 extendedFlag = 1
                 firstWord = firstWord[1:]
 
-            if firstWord in reservedWordTable:
+            if firstWord in reservedWordTable or firstWord in MACROLabels:
                state = 1 
                instruction['operation'] = firstWord
 
@@ -198,29 +198,22 @@ def getReservedWordTable( filePath ):
 #   Parse a origin amssble file
 #   @FilePath - the path of file
 #   return - A parse array of assemble instructions
-def ParseFile( FilePath,
-               reserveTablePath,
-               opcodeTablePath,
-               MACROLabels = []):
+def ParseLine(line,
+            reservedWordTable,
+            opcodeTable,
+            MACROLabels = []):
     '''
+    ParseLine(line, reservedWordTable, opcodeTable, MACROLabels)->Dict
     '''
-    reservedWordTable = getReservedWordTable( reserveTablePath )
-    opcodeTable = getOpcodeTable( opcodeTablePath )
+    assembleInstruction = None
+    line = line.strip()
+    if line != "":
+        assembleInstruction = lineProcess(line,
+                                        reservedWordTable,
+                                        opcodeTable,
+                                        MACROLabels)
 
-    lines = []
-
-    with open(FilePath, "r") as f:
-        lines = f.readlines()
-
-    assembleInstructions = []
-    for line in lines:
-        line = line.strip()
-        if line != "":
-            tempLineResult = lineProcess(line, reservedWordTable, opcodeTable)
-            if tempLineResult is not None:
-                assembleInstructions.append( tempLineResult )
-
-    return assembleInstructions
+    return assembleInstruction
 
 # conversion functions between hex and dec
 def decToHex(string_num):

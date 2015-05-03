@@ -97,7 +97,9 @@ def run(fileName) :
     testFolder = os.path.join(currDir, './test/testFiles')
     fileDir = os.path.join(testFolder, fileName)
     reservedWords = os.path.join(currDir, './lib/resource/reservedWord')
+    reservedWords = util.getReservedWordTable(reservedWords)
     opcodeTablePath = os.path.join( currDir, './lib/resource/opcode')
+    opcodeTablePath = util.getOpcodeTable(opcodeTablePath)
     macroLabels = []
     # find all macro labels
     # for i in util.ParseFile( fileDir, reservedWords, opcodeTablePath ) :
@@ -111,10 +113,12 @@ def run(fileName) :
     revisedAssemblyCode = [revisedAssemblyCode_BLK1, 
             revisedAssemblyCode_BLK2, revisedAssemblyCode_BLK3]
     firstLine = 0
+
     # read from assembly file
     assemblyFile = open(fileDir)
     for currLine in assemblyFile :
-        i = util.ParseLine( currLine, reservedWords, opcodeTablePath, macroLabels ) :
+        i = util.ParseLine( currLine, reservedWords, opcodeTablePath, macroLabels )
+        print i
         if i == None :
             continue
         # check if in process of macro processing
@@ -207,6 +211,7 @@ def run(fileName) :
                 newMacro['code'] = []
                 MCRTAB[i['label']] = newMacro
                 CURR_MACRO = i['label']
+                macroLabels.append(i['label'])
                 continue
             # normal condition
             if OPTAB.has_key(opcode) :
@@ -351,7 +356,6 @@ def run(fileName) :
     result['LITTAB'] = LITTAB
     return result
 
-'''
 
 # sample run
 fileName = 'macros.txt'
@@ -373,6 +377,5 @@ for i in range(len(littab)) :
     print littab[i]
 # end sample run
 
-'''
 
 

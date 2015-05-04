@@ -315,7 +315,6 @@ def run(fileName) :
             for symbol, address in SYMTAB.items() :
                 # find its block
                 if symbol not in BLKASSIGN.keys() :
-                    print symbol
                     continue
                 blockNumber = BLKASSIGN[symbol]
                 # calculate (new address = former address + start of its block)

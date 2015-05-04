@@ -1,3 +1,5 @@
 *.vim
 *.pyc
 .DS_Store
+object_program.txt
+object_code.txt

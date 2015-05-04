@@ -455,7 +455,6 @@ def getObjectCode(intermediateFile,
 
 		if objectCode is not None:
 			objectCode = util.formatHexString(objectCode)
-			print objectCode.upper()[2:]
 		intermediateFile[index]['objectCode'] = objectCode
 
 	return intermediateFile

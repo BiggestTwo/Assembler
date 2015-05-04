@@ -513,6 +513,8 @@ def run(intermediateFile,
 									opcodeTable,
 									LITTAB)
 
+	for k in intermediateFile:
+		print k
 	textRecords = constructTextRecord(intermediateFile)
 	records = records + textRecords
 	endRecord = constructEndRecord(intermediateFile)

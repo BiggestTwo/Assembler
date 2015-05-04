@@ -217,7 +217,7 @@ def run(fileName) :
                 CURR_MACRO = i['label']
                 macroLabels.append(i['label'])
                 continue
-            # macro expansion
+            # macro expansion (macro called)
             if opcode in macroLabels :
                 # insert definitions into main program 
                 # before this, replace parameters with variables
@@ -227,6 +227,11 @@ def run(fileName) :
                 macroCode = MCRTAB[macroName]['code']
                 for j in range(len(macroCode)) :
                     currCode = macroCode[j]
+                    # if there is a label for macro expansion, 
+                    # add this label to first line of macro expansion
+                    if j == 0: 
+                        if i['label'] != None :
+                            currCode = i['label'] + '   ' + currCode
                     # substitute if parameter exists in operand field
                     for k in range(len(macroParameters)) :
                         currCode = currCode.replace(macroParameters[k], variables[k])

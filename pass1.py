@@ -374,9 +374,9 @@ def run(fileName) :
     result['intermediate'] = mergedAssemblyCode
     result['SYMTAB'] = SYMTAB
     result['LITTAB'] = LITTAB
-    print MCRTAB['RDBUFF']
     return result
 
+'''
 
 # sample run
 fileName = 'macros.txt'
@@ -398,5 +398,4 @@ for i in range(len(littab)) :
     print littab[i]
 # end sample run
 
-
-
+'''

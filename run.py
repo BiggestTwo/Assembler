@@ -10,8 +10,8 @@ if __name__ == '__main__':
 
     currDir = os.path.split( os.path.realpath(__file__) )[0]
 
-   
-    pass1Result = pass1.run( 'macros.txt' )
+
+    pass1Result = pass1.run( 'prog_blocks.txt' )
     intermediateFile = pass1Result['intermediate']
     for k in intermediateFile:
         print k

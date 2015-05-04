@@ -432,7 +432,13 @@ def getObjectCode(intermediateFile,
 				objectCode = hex(op)[2:]
 			except:
 				# Hex character , e.g. X'05'
-				objectCode = op[2:4]
+				if op[0] == 'X':
+					objectCode = op[2:len(op)-1]
+				elif op[0] == 'C':
+					objectCode = ''
+					for k in op[2:len(op)-1]:
+						temp = hex(ord(k))[2:]
+						objectCode += temp
 
 		elif opcode is None and operation == 'WORD':
 			op = operand[0]
